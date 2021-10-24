@@ -6,6 +6,7 @@ use App\Models\Email;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\DomCrawler\Crawler;
 
 class Scrap extends Command
@@ -47,11 +48,11 @@ class Scrap extends Command
 
         $scrapingId = ++$last->id;
 
-        for ($i = $scrapingId; $i <= $scrapingId + 100; $i++) {
+        for ($i = $scrapingId; $i <= $scrapingId + 30; $i++) {
             $this->scrap($i);
         }
 
-        DB::table('settings')->where('name', 'dribbble')->update(['id' => $i - 1]);
+        DB::table('settings')->where('name', 'dribbble')->update(['id' => $i - 1, 'updated_at' => now()]);
 
         return Command::SUCCESS;
     }
@@ -62,9 +63,11 @@ class Scrap extends Command
         $content = $response->body();
 
         if ($response->status() !== 200) {
+            Log::info($this->url . $scrapingId . ' ==' . $response->status());
             return;
         }
 
+        Log::info($this->url . $scrapingId . ' **' . $response->status());
         $match = [];
         $pattern = '/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}/';
         preg_match_all($pattern, $content, $match);
@@ -76,7 +79,7 @@ class Scrap extends Command
             $name = $crawler->filter('div.shot-user-details > a.shot-user-link')->first()->text();
 
             foreach ($emails as $email) {
-                $emailobject = Email::firstOrCreate(
+                Email::firstOrCreate(
                     [
                         'email' => $email
                     ],
