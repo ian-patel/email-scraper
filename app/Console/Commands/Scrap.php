@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Email;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -76,7 +77,11 @@ class Scrap extends Command
 
         if ($emails) {
             $crawler = new Crawler($content);
-            $name = $crawler->filter('div.shot-user-details > a.shot-user-link')->first()->text();
+            try {
+                $name = $crawler->filter('div.shot-user-details > a.shot-user-link')->first()->text();
+            } catch (Exception $e) {
+                $name = $crawler->filter('div.shot-user-details')->first()->text();
+            }
 
             foreach ($emails as $email) {
                 Email::firstOrCreate(
